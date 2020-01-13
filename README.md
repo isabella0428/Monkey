@@ -1,2 +1,2 @@
-# Writing_An_Interpreter_In_Go
+# Writing An Interpreter In Go
 These are my "Monkey" Interpreter written in Golang, following the instructions in book "Writing An Interpreter In Go"
