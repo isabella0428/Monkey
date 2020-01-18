@@ -35,14 +35,15 @@ func New(l *lexer.Lexer) *Parser {
 	p.nextToken()
 
 	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
-	p.registerPrefix(token.IDENT, 	p.parseIdentifier)
-	p.registerPrefix(token.INT,   	p.parseIntegerLiteral)
-	p.registerPrefix(token.BANG,  	p.parsePrefixExpression)
-	p.registerPrefix(token.MINUS, 	p.parsePrefixExpression)
-	p.registerPrefix(token.TRUE,  	p.parseBoolean)
-	p.registerPrefix(token.FALSE, 	p.parseBoolean)
-	p.registerPrefix(token.LPAREN, 	p.parseGroupedExpression)
-	p.registerPrefix(token.IF, 		p.parseIfExpression)
+	p.registerPrefix(token.IDENT, 		p.parseIdentifier)
+	p.registerPrefix(token.INT,   		p.parseIntegerLiteral)
+	p.registerPrefix(token.BANG,  		p.parsePrefixExpression)
+	p.registerPrefix(token.MINUS, 		p.parsePrefixExpression)
+	p.registerPrefix(token.TRUE,  		p.parseBoolean)
+	p.registerPrefix(token.FALSE, 		p.parseBoolean)
+	p.registerPrefix(token.LPAREN, 		p.parseGroupedExpression)
+	p.registerPrefix(token.IF, 			p.parseIfExpression)
+	p.registerPrefix(token.FUNCTION, 	p.parseFunctionLiteral)
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
@@ -53,6 +54,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.NOT_EQ, p.parseInfixExpression)
 	p.registerInfix(token.LT, p.parseInfixExpression)
 	p.registerInfix(token.GT, p.parseInfixExpression)
+	p.registerInfix(token.LPAREN, p.parseCallExpression)
 	return p
 }
 
@@ -325,6 +327,79 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement{
 	return block
 }
 
+func (p *Parser) parseFunctionLiteral() ast.Expression {
+	lit := &ast.FunctionLiteral{Token:p.curToken}
+
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+
+	lit.Parameters = p.parseFunctionParameters()
+
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+
+	lit.Body = p.parseBlockStatement()
+	return lit
+}
+
+func (p *Parser) parseFunctionParameters() []*ast.Identifier {
+	identifiers := []*ast.Identifier{}
+
+	if p.peekTokenIs(token.RPAREN) {
+		p.nextToken()
+		return identifiers
+	}
+
+	p.nextToken()
+	ident := &ast.Identifier{Token:p.curToken, Value:p.curToken.Literal}
+	identifiers = append(identifiers, ident)
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken()
+		p.nextToken()
+		ident =  &ast.Identifier{Token:p.curToken, Value:p.curToken.Literal}
+		identifiers = append(identifiers, ident) 
+	}
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	return identifiers
+}
+
+func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
+	exp := &ast.CallExpression { Token:p.curToken, Function:function}
+	exp.Arguments = p.parseCallArguments()
+	return exp
+}
+
+func (p *Parser) parseCallArguments() []ast.Expression{
+	args := []ast.Expression{}
+
+	if p.peekTokenIs(token.RPAREN) {
+		p.nextToken()
+		return args
+	}
+
+	p.nextToken()
+	args = append(args, p.parseExpression(LOWEST))
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken()
+		p.nextToken()
+		args = append(args, p.parseExpression(LOWEST))
+	}
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	return args
+}
+
 // Define procedence of each operators
 const (
 	_int = iota		// Auto-Increment, 0, 1, 2, ...
@@ -345,6 +420,7 @@ var precedences = map[token.TokenType]int {
     token.PLUS:			SUM,
     token.MINUS:   		SUM,
     token.SLASH:    	PRODUCT,
-    token.ASTERISK: 	PRODUCT,
+	token.ASTERISK: 	PRODUCT,
+	token.LPAREN:   	CALL,
 }
 
