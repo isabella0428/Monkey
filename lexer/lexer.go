@@ -1,7 +1,6 @@
 package lexer
 
 import "../token"
-import "fmt"
 
 type Lexer struct {
 	input 			string
@@ -74,7 +73,6 @@ func (l *Lexer) NextToken() token.Token {
 				tok = token.Token{Type:token.EQ, Literal:string(ch) + string(l.ch)}
 			} else {
 				tok = newToken(token.ASSIGN, l.ch)
-				fmt.Printf("%q", l.ch)
 			}
 		case '+':
 			tok = newToken(token.PLUS, l.ch)
