@@ -132,10 +132,7 @@ func (p *Parser) parseLetStatement() *ast.LetStatement {
 
 func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	stmt := &ast.ReturnStatement{Token: p.curToken}
-
-	if !p.expectPeek(token.IDENT) {
-		return nil
-	}
+	p.nextToken()		// It could be integers or identifiers
 
 	stmt.ReturnValue = p.parseExpression(LOWEST)
 	if p.peekTokenIs(token.SEMICOLON) { 
