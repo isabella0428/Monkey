@@ -23,6 +23,7 @@ const (
 	ERROR_OBJ = "ERROR"
 	FUNCTION_OBJ  = "FUNCTION"
 	STRING_OBJ	 = "STRING"
+	BUILTIN_OBJ = "BUILTIN"
 )
 
 // -----------------------
@@ -88,3 +89,13 @@ type String struct {
 
 func (s *String) Type() ObjectType{return STRING_OBJ}
 func (s *String) Inspect() string {return s.Value}
+
+type Builtin struct {
+	Fn BuiltinFunction
+}
+
+func (bi *Builtin) Type() ObjectType {return BUILTIN_OBJ}
+func (bi *Builtin) Inspect() string {return "builtin function"}
+
+
+type BuiltinFunction func(args ...Object) Object
