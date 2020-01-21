@@ -57,7 +57,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.LT, p.parseInfixExpression)
 	p.registerInfix(token.GT, p.parseInfixExpression)
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
-	// p.registerInfix(token.LBRACKET, p.par)
+	p.registerInfix(token.LBRACKET, p.parseIndexExpression)
 	return p
 }
 
@@ -410,6 +410,18 @@ func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
 	return expressions
 }
 
+func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
+	exp := &ast.IndexExpression{Left:left, Token:p.curToken}
+	p.nextToken()
+
+	exp.Index = p.parseExpression(LOWEST)
+	
+	if !p.expectPeek(token.RBRACKET) {
+		return nil
+	}
+	return exp
+}
+
 // Define procedence of each operators
 const (
 	_int = iota		// Auto-Increment, 0, 1, 2, ...
@@ -420,6 +432,7 @@ const (
 	PRODUCT 		// *				5
 	PREFIX			// -X or !X			6
 	CALL			// myFunction(X)	7
+	INDEX			// arr[1]			8
 )
 
 var precedences = map[token.TokenType]int {
@@ -432,4 +445,5 @@ var precedences = map[token.TokenType]int {
     token.SLASH:    	PRODUCT,
 	token.ASTERISK: 	PRODUCT,
 	token.LPAREN:   	CALL,
+	token.LBRACKET:		INDEX,
 }
