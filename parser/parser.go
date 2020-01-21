@@ -57,6 +57,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.LT, p.parseInfixExpression)
 	p.registerInfix(token.GT, p.parseInfixExpression)
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
+	// p.registerInfix(token.LBRACKET, p.par)
 	return p
 }
 
@@ -388,26 +389,25 @@ func (p *Parser) parseArrayLiteral() ast.Expression {
 }
 
 func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
-	list := []ast.Expression{}
+	expressions := []ast.Expression{}
 
 	if p.peekTokenIs(end) {
 		p.nextToken()
-		return list
+		return expressions
 	}
 
 	p.nextToken()
-	list = append(list, p.parseExpression(LOWEST))
-
+	expressions = append(expressions, p.parseExpression(LOWEST))
 	for p.peekTokenIs(token.COMMA) {
 		p.nextToken()
 		p.nextToken()
-		list = append(list, p.parseExpression(LOWEST))
+		expressions = append(expressions, p.parseExpression(LOWEST))	
 	}
 
-	if !p.peekTokenIs(end) {
+	if !p.expectPeek(end) {
 		return nil
 	}
-	return list
+	return expressions
 }
 
 // Define procedence of each operators
@@ -433,4 +433,3 @@ var precedences = map[token.TokenType]int {
 	token.ASTERISK: 	PRODUCT,
 	token.LPAREN:   	CALL,
 }
-
